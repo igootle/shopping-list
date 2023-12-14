@@ -1,7 +1,8 @@
 const itemForm = document.querySelector("#item-form");
 const itemList = document.querySelector("#item-list");
 const itemInput = document.querySelector("#item-input");
-const itemClear = document.querySelector("#clear");
+const clearBtn = document.querySelector("#clear");
+const itemFilter = document.querySelector(".filter");
 
 // function  Add Items List
 const onAddItem = (e) => {
@@ -26,8 +27,10 @@ const onAddItem = (e) => {
   // แทรกตัว button ไว้ที่ li
   li.appendChild(button);
 
-  // แทรก li ไปยัง unorder list
+  // แทรก li ไปยัง unorder list(DOM)
   itemList.appendChild(li);
+
+  checkUI();
 
   // clear ค่า input เป็น ค่าว่าง
   itemInput.value = "";
@@ -56,8 +59,11 @@ const createIcon = (classes) => {
 // function remove item
 const removeItem = (e) => {
   if (e.target.parentElement.classList.contains("remove-item")) {
-    e.target.parentElement.parentElement.remove();
+    if (confirm("Are you sure?")) {
+      e.target.parentElement.parentElement.remove();
+    }
   }
+  checkUI();
 };
 
 const onClearItem = () => {
@@ -68,6 +74,18 @@ const onClearItem = () => {
   while (itemList.firstChild) {
     itemList.removeChild(itemList.firstChild);
   }
+  checkUI();
+};
+
+const checkUI = () => {
+  const items = document.querySelectorAll("li");
+  if (items.length === 0) {
+    clearBtn.style.display = "none";
+    itemFilter.style.display = "none";
+  } else {
+    clearBtn.style.display = "block";
+    itemFilter.style.display = "block";
+  }
 };
 
 // Event Listeners
@@ -75,4 +93,5 @@ itemForm.addEventListener("submit", onAddItem);
 
 itemList.addEventListener("click", removeItem);
 
-itemClear.addEventListener("click", onClearItem);
+clearBtn.addEventListener("click", onClearItem);
+checkUI();
