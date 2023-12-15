@@ -3,23 +3,59 @@ const itemList = document.querySelector("#item-list");
 const itemInput = document.querySelector("#item-input");
 const clearBtn = document.querySelector("#clear");
 const itemFilter = document.querySelector(".filter");
+const formBtn = itemForm.querySelector("button");
+let isEditMode = false;
+
+const displayItems = () => {
+  const itemsFromStorage = getItemsFromStorage();
+  itemsFromStorage.forEach((item) => addItemToDOM(item));
+  checkUI();
+};
 
 // function  Add Items List
-const onAddItem = (e) => {
+const onAddItemSubmit = (e) => {
   e.preventDefault();
-
+  // แปลง itemInput.value เป็น TextNode แล้วเก็บไว้ที่ itemInputValue
+  const itemInputValue = itemInput.value;
   // check ค่าว่าง itemInput
   if (itemInput.value === "") {
     alert("กรุณากรอกข้อมูล");
     return;
   }
 
-  // แปลง itemInput.value เป็น TextNode แล้วเก็บไว้ที่ itemInputValue
-  const itemInputValue = document.createTextNode(itemInput.value);
+  // Check for edit mode
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector(".edit-mode");
 
+    removeItemFromStorage(itemToEdit.textContent);
+    itemToEdit.classList.remove("edit-mode");
+    itemToEdit.remove();
+    isEditMode = false;
+  } else {
+    if (checkIfItemExists(itemInputValue)) {
+      alert("That item already exists!");
+      return;
+    }
+  }
+
+  // create Item DOM Element
+  addItemToDOM(itemInputValue);
+
+  // Add item to localStorage
+  addItemToStorage(itemInputValue);
+
+  // displayItems();
+  checkUI();
+
+  // clear ค่า input เป็น ค่าว่าง
+  itemInput.value = "";
+};
+
+const addItemToDOM = (item) => {
+  console.log(item);
   // create element li แล้ว append child Input value
   const li = document.createElement("li");
-  li.appendChild(itemInputValue);
+  li.appendChild(document.createTextNode(item));
 
   // สร้าง button ผ่าน function
   const button = createButton("remove-item btn-link text-red");
@@ -29,11 +65,6 @@ const onAddItem = (e) => {
 
   // แทรก li ไปยัง unorder list(DOM)
   itemList.appendChild(li);
-
-  checkUI();
-
-  // clear ค่า input เป็น ค่าว่าง
-  itemInput.value = "";
 };
 
 // function Create Button
@@ -56,14 +87,87 @@ const createIcon = (classes) => {
   return ico;
 };
 
-// function remove item
-const removeItem = (e) => {
-  if (e.target.parentElement.classList.contains("remove-item")) {
-    if (confirm("Are you sure?")) {
-      e.target.parentElement.parentElement.remove();
-    }
+const addItemToStorage = (item) => {
+  // สร้างตัวแปร
+  const itemsFromStorage = getItemsFromStorage();
+
+  // Add new item to array
+  itemsFromStorage.push(item);
+
+  // Convert to javascript object to JSON for set to localStorage
+  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
+};
+
+const getItemsFromStorage = () => {
+  // สร้างตัวแปร
+  let itemsFromStorage;
+  // check ข้อมูลใน localStorage ว่าที่ key items เป็นค่า null หรือไม่
+  if (localStorage.getItem("items") === null) {
+    // ให้ตัวแปร itemsFromStorage มีค่าเป็น array แบบว่าง
+    // itemsFromStorage = new Array();
+    itemsFromStorage = [];
+  } else {
+    // ให้ตัวแปร itemsFromStorage เก็บค่า ของ localStorage ที่มี key items แล้วแปลงข้อมูลจาก localStorage ที่เป็นแบบ json ให้เป็น javascript object
+    itemsFromStorage = JSON.parse(localStorage.getItem("items"));
   }
-  checkUI();
+
+  return itemsFromStorage;
+};
+
+const onClickItem = (e) => {
+  if (e.target.parentElement.classList.contains("remove-item")) {
+    removeItem(e.target.parentElement.parentElement);
+  } else {
+    setItemToEdit(e.target);
+  }
+};
+
+const checkIfItemExists = (item) => {
+  const itemsFromStorage = getItemsFromStorage();
+
+  return itemsFromStorage.includes(item);
+};
+
+const setItemToEdit = (item) => {
+  isEditMode = true;
+
+  itemList
+    .querySelectorAll("li")
+    .forEach((i) => i.classList.remove("edit-mode"));
+
+  item.classList.add("edit-mode");
+  formBtn.innerHTML = '<i class="fa-solid fa-pen"></i> Update Item';
+  formBtn.style.backgroundColor = "#228822";
+  itemInput.value = item.textContent;
+};
+
+// function remove item
+
+const removeItem = (item) => {
+  if (confirm("Are you sure?")) {
+    // Remove item from DOM
+    item.remove();
+
+    // Remove item from storage
+    removeItemFromStorage(item.textContent);
+
+    checkUI();
+  }
+};
+
+const removeItemFromStorage = (item) => {
+  let itemsFromStorage = getItemsFromStorage();
+
+  // Filter out item to be removed
+
+  itemsFromStorage = itemsFromStorage.filter((i) => {
+    return i !== item;
+  });
+
+  console.log(itemsFromStorage);
+
+  // Re-set to localstorage
+  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
 };
 
 const onClearItem = () => {
@@ -74,6 +178,9 @@ const onClearItem = () => {
   while (itemList.firstChild) {
     itemList.removeChild(itemList.firstChild);
   }
+
+  // Clear form localStorage
+  localStorage.removeItem("items");
   checkUI();
 };
 const onFilter = (e) => {
@@ -111,15 +218,24 @@ const checkUI = () => {
     clearBtn.style.display = "block";
     itemFilter.style.display = "block";
   }
+  formBtn.innerHTML = "<i class='fa-solid fa-plus'></i> Add Item";
+  formBtn.style.backgroundColor = "#333";
+  isEditMode = false;
 };
 
-// Event Listeners
-itemForm.addEventListener("submit", onAddItem);
+// Initialize app
+const init = () => {
+  // Event Listeners
+  itemForm.addEventListener("submit", onAddItemSubmit);
 
-itemList.addEventListener("click", removeItem);
+  itemList.addEventListener("click", onClickItem);
 
-clearBtn.addEventListener("click", onClearItem);
+  clearBtn.addEventListener("click", onClearItem);
 
-itemFilter.addEventListener("input", onFilter);
+  itemFilter.addEventListener("input", onFilter);
 
-checkUI();
+  document.addEventListener("DOMContentLoaded", displayItems);
+
+  checkUI();
+};
+init();
