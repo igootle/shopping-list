@@ -76,6 +76,31 @@ const onClearItem = () => {
   }
   checkUI();
 };
+const onFilter = (e) => {
+  // select li ทั้งหมดเป็น array เก็บไว้ที่ items
+  const items = document.querySelectorAll("li");
+
+  // เก็บค่าเมื่อเราพิมพ์ที่ filter แปลงเป็นตัวเล็กเก็บไว้ที่ ตัวแปร text
+  const text = e.target.value.toLowerCase();
+
+  // แสดงข้อมูล items ทั้งหมดผ่าน forEach
+  items.forEach((item) => {
+    const itemName = item.textContent.toLowerCase();
+
+    if (itemName.indexOf(text) === -1) {
+      item.style.display = "none";
+    } else {
+      item.style.display = "";
+    }
+  });
+  // เลือกข้อมูลที่เป็น text ที่อยู่ใน Element li แปลงเป็น lowercase เก็บค่าไว้ที่ตัวแปร itemName
+
+  // เช็คค่าว่า itemName มีส่วนที่ตรงกัน กับ สิ่งที่พิมพ์ในช่อง filter ไหม โดยใช้ indexOf ถ้าไม่ใช่จะ return ค่าเป็น -1
+
+  // ไม่ต้องแสดงอะไร
+
+  // แสดง display เป็น none
+};
 
 const checkUI = () => {
   const items = document.querySelectorAll("li");
@@ -94,4 +119,7 @@ itemForm.addEventListener("submit", onAddItem);
 itemList.addEventListener("click", removeItem);
 
 clearBtn.addEventListener("click", onClearItem);
+
+itemFilter.addEventListener("input", onFilter);
+
 checkUI();
